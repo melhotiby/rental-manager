@@ -5,7 +5,6 @@ DROP TABLE IF EXISTS payment_tracking CASCADE;
 DROP TABLE IF EXISTS recurring_bills CASCADE;
 DROP TABLE IF EXISTS property_expenses CASCADE;
 DROP TABLE IF EXISTS expenses CASCADE;
-DROP TABLE IF EXISTS mortgages CASCADE;
 DROP TABLE IF EXISTS properties CASCADE;
 
 -- Rental Properties
@@ -15,6 +14,7 @@ CREATE TABLE properties (
   address TEXT,
   monthly_rent DECIMAL(10, 2) NOT NULL DEFAULT 0,
   property_management_percent DECIMAL(5, 2) DEFAULT 10.00,
+  extra_monthly_expenses DECIMAL(10, 2) DEFAULT 0.00,
   hoa_fee DECIMAL(10, 2) DEFAULT 0.00,
   is_paid_off BOOLEAN DEFAULT FALSE,
   notes TEXT,
@@ -23,20 +23,6 @@ CREATE TABLE properties (
 );
 
 -- Mortgages (linked to properties or standalone for primary residence)
-CREATE TABLE mortgages (
-  id SERIAL PRIMARY KEY,
-  property_id INTEGER REFERENCES properties(id) ON DELETE CASCADE,
-  name VARCHAR(255) NOT NULL,
-  monthly_payment DECIMAL(10, 2) NOT NULL,
-  principal_balance DECIMAL(10, 2),
-  interest_rate DECIMAL(5, 2),
-  is_primary_residence BOOLEAN DEFAULT FALSE,
-  payment_link TEXT,
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Recurring Bills (taxes, insurance, etc.)
 CREATE TABLE recurring_bills (
   id SERIAL PRIMARY KEY,
@@ -49,6 +35,8 @@ CREATE TABLE recurring_bills (
   payment_link TEXT,
   notes TEXT,
   is_active BOOLEAN DEFAULT TRUE,
+  is_one_time BOOLEAN DEFAULT FALSE, -- TRUE for repairs that shouldn't repeat
+  one_time_year INTEGER, -- Year this one-time expense applies to
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -86,7 +74,6 @@ CREATE TABLE payment_tracking (
 );
 
 -- Indexes for better performance
-CREATE INDEX idx_mortgages_property ON mortgages(property_id);
 CREATE INDEX idx_recurring_bills_property ON recurring_bills(property_id);
 CREATE INDEX idx_property_expenses_property ON property_expenses(property_id);
 CREATE INDEX idx_payment_tracking_month_year ON payment_tracking(payment_month, payment_year);

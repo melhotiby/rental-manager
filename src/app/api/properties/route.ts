@@ -1,4 +1,3 @@
-// src/app/api/properties/route.ts
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 
@@ -25,6 +24,7 @@ export async function POST(request: Request) {
       address,
       monthly_rent,
       property_management_percent,
+      extra_monthly_expenses,
       hoa_fee,
       is_paid_off,
       notes
@@ -32,14 +32,15 @@ export async function POST(request: Request) {
 
     const result = await pool.query(
       `INSERT INTO properties 
-       (name, address, monthly_rent, property_management_percent, hoa_fee, is_paid_off, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (name, address, monthly_rent, property_management_percent, extra_monthly_expenses, hoa_fee, is_paid_off, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         name,
         address || '',
         monthly_rent,
         property_management_percent || 10,
+        extra_monthly_expenses || 0,
         hoa_fee || 0,
         is_paid_off || false,
         notes || ''
@@ -88,6 +89,7 @@ export async function PATCH(request: Request) {
       address,
       monthly_rent,
       property_management_percent,
+      extra_monthly_expenses,
       hoa_fee,
       is_paid_off,
       notes
@@ -106,17 +108,19 @@ export async function PATCH(request: Request) {
            address = $2, 
            monthly_rent = $3, 
            property_management_percent = $4, 
-           hoa_fee = $5,
-           is_paid_off = $6,
-           notes = $7,
+           extra_monthly_expenses = $5,
+           hoa_fee = $6,
+           is_paid_off = $7,
+           notes = $8,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8
+       WHERE id = $9
        RETURNING *`,
       [
         name,
         address,
         monthly_rent,
         property_management_percent,
+        extra_monthly_expenses || 0,
         hoa_fee,
         is_paid_off,
         notes || '',

@@ -43,13 +43,15 @@ export async function POST(request: Request) {
       due_month,
       category,
       payment_link,
-      notes
+      notes,
+      is_one_time,
+      one_time_year
     } = body
 
     const result = await pool.query(
       `INSERT INTO recurring_bills 
-       (property_id, name, amount, frequency, due_month, category, payment_link, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (property_id, name, amount, frequency, due_month, category, payment_link, notes, is_one_time, one_time_year)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         property_id,
@@ -59,7 +61,9 @@ export async function POST(request: Request) {
         due_month,
         category,
         payment_link || '',
-        notes || ''
+        notes || '',
+        is_one_time || false,
+        one_time_year
       ]
     )
 
