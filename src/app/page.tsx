@@ -127,6 +127,7 @@ export default function Dashboard() {
   const [showRepairForm, setShowRepairForm] = useState(false)
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [editingBill, setEditingBill] = useState<RecurringBill | null>(null)
+  const [editingRepair, setEditingRepair] = useState<RecurringBill | null>(null)
 
   const toast = useToast()
 
@@ -375,16 +376,44 @@ export default function Dashboard() {
   }
 
   const startEditBill = (bill: RecurringBill) => {
-    setEditingBill(bill)
-    setBillPropertyId(bill.property_id?.toString() || '')
-    setBillName(bill.name)
-    setBillAmount(bill.amount.toString())
-    setBillFrequency(bill.frequency)
-    setBillDueMonth(bill.due_month?.toString() || '')
-    setBillCategory(bill.category)
-    setBillPaymentLink(bill.payment_link)
-    setBillNotes(bill.notes)
-    setShowBillForm(true)
+    if (bill.billed) {
+      toast({
+        title: 'Cannot Edit Billed Entry',
+        description: 'This time entry has been billed and cannot be modified.',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true
+      })
+      return
+    }
+
+    // Check if it's a repair (one-time expense)
+    if (bill.is_one_time) {
+      // Open repair form instead
+      setEditingRepair(bill)
+      setRepairDescription(
+        bill.name.replace(
+          `${MONTHS[(bill.due_month || 1) - 1]} ${bill.one_time_year} - `,
+          ''
+        )
+      )
+      setRepairAmount(bill.amount.toString())
+      setRepairPropertyId(bill.property_id?.toString() || '')
+      setRepairNotes(bill.notes)
+      setShowRepairForm(true)
+    } else {
+      // Open bill form
+      setEditingBill(bill)
+      setBillPropertyId(bill.property_id?.toString() || '')
+      setBillName(bill.name)
+      setBillAmount(bill.amount.toString())
+      setBillFrequency(bill.frequency)
+      setBillDueMonth(bill.due_month?.toString() || '')
+      setBillCategory(bill.category)
+      setBillPaymentLink(bill.payment_link)
+      setBillNotes(bill.notes)
+      setShowBillForm(true)
+    }
   }
 
   const cancelBillEdit = () => {
@@ -398,6 +427,27 @@ export default function Dashboard() {
     setBillPaymentLink('')
     setBillNotes('')
     setShowBillForm(false)
+  }
+
+  const startEditRepair = (repair: RecurringBill) => {
+    setEditingRepair(repair)
+    // Extract description from name (remove "Month Year - " prefix)
+    const nameMatch = repair.name.match(/^[A-Za-z]+ \d{4} - (.+)$/)
+    const description = nameMatch ? nameMatch[1] : repair.name
+    setRepairDescription(description)
+    setRepairAmount(repair.amount.toString())
+    setRepairPropertyId(repair.property_id?.toString() || '')
+    setRepairNotes(repair.notes || '')
+    setShowRepairForm(true)
+  }
+
+  const cancelRepairEdit = () => {
+    setEditingRepair(null)
+    setRepairDescription('')
+    setRepairAmount('')
+    setRepairPropertyId('')
+    setRepairNotes('')
+    setShowRepairForm(false)
   }
 
   const deleteRecurringBill = async (id: number) => {
@@ -564,27 +614,33 @@ export default function Dashboard() {
     }
 
     try {
+      const method = editingRepair ? 'PATCH' : 'POST'
       const monthName = MONTHS[currentMonth - 1]
+
+      const payload = {
+        ...(editingRepair && { id: editingRepair.id }),
+        property_id: repairPropertyId ? parseInt(repairPropertyId) : null,
+        name: `${monthName} ${currentYear} - ${repairDescription}`,
+        amount: parseFloat(repairAmount),
+        frequency: 'annual',
+        due_month: currentMonth,
+        category: 'repairs',
+        payment_link: '',
+        notes: repairNotes || 'One-time repair',
+        is_one_time: true,
+        one_time_year: currentYear,
+        is_active: true
+      }
+
       const res = await fetch('/api/recurring-bills', {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          property_id: repairPropertyId ? parseInt(repairPropertyId) : null,
-          name: `${monthName} ${currentYear} - ${repairDescription}`,
-          amount: parseFloat(repairAmount),
-          frequency: 'annual', // Set frequency (required field)
-          due_month: currentMonth, // This month
-          category: 'repairs',
-          payment_link: '',
-          notes: repairNotes || 'One-time repair',
-          is_one_time: true, // Mark as one-time
-          one_time_year: currentYear // Only for this year
-        })
+        body: JSON.stringify(payload)
       })
 
       if (res.ok) {
         toast({
-          title: 'Repair added!',
+          title: editingRepair ? 'Repair updated!' : 'Repair added!',
           description:
             'This will only show in ' + monthName + ' ' + currentYear,
           status: 'success',
@@ -594,13 +650,14 @@ export default function Dashboard() {
         setRepairAmount('')
         setRepairPropertyId('')
         setRepairNotes('')
+        setEditingRepair(null)
         setShowRepairForm(false)
         await loadRecurringBills()
       }
     } catch (error) {
-      console.error('Error adding repair:', error)
+      console.error('Error saving repair:', error)
       toast({
-        title: 'Error adding repair',
+        title: 'Error saving repair',
         status: 'error',
         duration: 3000
       })
@@ -718,6 +775,20 @@ export default function Dashboard() {
       style: 'currency',
       currency: 'USD'
     }).format(amount)
+  }
+
+  const getPropertyColor = (index: number) => {
+    const colors = [
+      'blue',
+      'purple',
+      'green',
+      'orange',
+      'pink',
+      'teal',
+      'cyan',
+      'red'
+    ]
+    return colors[index % colors.length]
   }
 
   return (
@@ -1150,8 +1221,8 @@ export default function Dashboard() {
                   <Card bg="orange.50" borderWidth={1} borderColor="orange.200">
                     <CardBody>
                       <Heading size="sm" mb={2}>
-                        Add One-Time Repair for {MONTHS[currentMonth - 1]}{' '}
-                        {currentYear}
+                        {editingRepair ? 'Edit' : 'Add'} One-Time Repair for{' '}
+                        {MONTHS[currentMonth - 1]} {currentYear}
                       </Heading>
                       <Text fontSize="sm" color="orange.700" mb={4}>
                         For unexpected repairs that reduced your income this
@@ -1219,10 +1290,7 @@ export default function Dashboard() {
                         </GridItem>
                       </Grid>
                       <HStack justify="end" mt={4}>
-                        <Button
-                          size="sm"
-                          onClick={() => setShowRepairForm(false)}
-                        >
+                        <Button size="sm" onClick={cancelRepairEdit}>
                           Cancel
                         </Button>
                         <Button
@@ -1230,7 +1298,7 @@ export default function Dashboard() {
                           colorScheme="orange"
                           onClick={addOneTimeRepair}
                         >
-                          Add Repair
+                          {editingRepair ? 'Update Repair' : 'Add Repair'}
                         </Button>
                       </HStack>
                     </CardBody>
@@ -1308,15 +1376,29 @@ export default function Dashboard() {
                             <Td>
                               <HStack spacing={1}>
                                 <IconButton
-                                  aria-label="Edit bill"
+                                  aria-label={
+                                    bill.is_one_time
+                                      ? 'Edit repair'
+                                      : 'Edit bill'
+                                  }
                                   icon={<Edit size={16} />}
                                   size="sm"
-                                  colorScheme="blue"
+                                  colorScheme={
+                                    bill.is_one_time ? 'orange' : 'blue'
+                                  }
                                   variant="ghost"
-                                  onClick={() => startEditBill(bill)}
+                                  onClick={() =>
+                                    bill.is_one_time
+                                      ? startEditRepair(bill)
+                                      : startEditBill(bill)
+                                  }
                                 />
                                 <IconButton
-                                  aria-label="Delete bill"
+                                  aria-label={
+                                    bill.is_one_time
+                                      ? 'Delete repair'
+                                      : 'Delete bill'
+                                  }
                                   icon={<Trash2 size={16} />}
                                   size="sm"
                                   colorScheme="red"
@@ -1594,24 +1676,75 @@ export default function Dashboard() {
                           extraExpenses -
                           Number(prop.hoa_fee)
 
+                        // Generate a consistent color for each property based on its ID
+                        const colors = [
+                          'blue',
+                          'purple',
+                          'pink',
+                          'orange',
+                          'teal',
+                          'cyan',
+                          'green'
+                        ]
+                        const colorIndex = (prop.id || 0) % colors.length
+                        const propertyColor = colors[colorIndex]
+
                         return (
                           <Tr key={prop.id}>
                             <Td>
-                              <VStack align="start" spacing={0}>
-                                <HStack>
-                                  <Text fontWeight="semibold">{prop.name}</Text>
-                                  {prop.is_paid_off && (
-                                    <Badge colorScheme="green" fontSize="xs">
-                                      Paid Off
-                                    </Badge>
+                              <HStack spacing={3}>
+                                {/* Property Icon */}
+                                <Box
+                                  bg={`${propertyColor}.100`}
+                                  p={2}
+                                  borderRadius="md"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                >
+                                  <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                                      stroke={`var(--chakra-colors-${propertyColor}-600)`}
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      fill={`var(--chakra-colors-${propertyColor}-200)`}
+                                    />
+                                    <path
+                                      d="M9 22V12h6v10"
+                                      stroke={`var(--chakra-colors-${propertyColor}-600)`}
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </Box>
+
+                                <VStack align="start" spacing={0}>
+                                  <HStack>
+                                    <Text fontWeight="semibold">
+                                      {prop.name}
+                                    </Text>
+                                    {prop.is_paid_off && (
+                                      <Badge colorScheme="green" fontSize="xs">
+                                        ✓ Paid Off
+                                      </Badge>
+                                    )}
+                                  </HStack>
+                                  {prop.address && (
+                                    <Text fontSize="xs" color="gray.500">
+                                      {prop.address}
+                                    </Text>
                                   )}
-                                </HStack>
-                                {prop.address && (
-                                  <Text fontSize="xs" color="gray.500">
-                                    {prop.address}
-                                  </Text>
-                                )}
-                              </VStack>
+                                </VStack>
+                              </HStack>
                             </Td>
                             <Td
                               isNumeric
