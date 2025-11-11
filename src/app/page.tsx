@@ -68,6 +68,8 @@ interface Property {
   extra_monthly_expenses: number
   hoa_fee: number
   is_paid_off: boolean
+  is_rental: boolean
+  purchase_price: number
   notes: string
 }
 
@@ -139,6 +141,8 @@ export default function Dashboard() {
   const [propExtraExpenses, setPropExtraExpenses] = useState('0')
   const [propHoa, setPropHoa] = useState('0')
   const [propPaidOff, setPropPaidOff] = useState(false)
+  const [propIsRental, setPropIsRental] = useState(true)
+  const [propPurchasePrice, setPropPurchasePrice] = useState('')
 
   // Bill form
   const [billPropertyId, setBillPropertyId] = useState<string>('')
@@ -220,7 +224,9 @@ export default function Dashboard() {
         property_management_percent: parseFloat(propMgmtPercent),
         extra_monthly_expenses: parseFloat(propExtraExpenses),
         hoa_fee: parseFloat(propHoa),
-        is_paid_off: propPaidOff
+        is_paid_off: propPaidOff,
+        is_rental: propIsRental,
+        purchase_price: propPurchasePrice ? parseFloat(propPurchasePrice) : 0
       }
 
       const res = await fetch('/api/properties', {
@@ -242,6 +248,8 @@ export default function Dashboard() {
         setPropExtraExpenses('0')
         setPropHoa('0')
         setPropPaidOff(false)
+        setPropIsRental(true)
+        setPropPurchasePrice('')
         setEditingProperty(null)
         setShowPropertyForm(false)
         loadProperties()
@@ -265,6 +273,8 @@ export default function Dashboard() {
     setPropExtraExpenses((property.extra_monthly_expenses || 0).toString())
     setPropHoa(property.hoa_fee.toString())
     setPropPaidOff(property.is_paid_off)
+    setPropIsRental(property.is_rental ?? true)
+    setPropPurchasePrice((property.purchase_price || 0).toString())
     setShowPropertyForm(true)
   }
 
@@ -277,6 +287,8 @@ export default function Dashboard() {
     setPropExtraExpenses('0')
     setPropHoa('0')
     setPropPaidOff(false)
+    setPropIsRental(true)
+    setPropPurchasePrice('')
     setShowPropertyForm(false)
   }
 
@@ -1591,6 +1603,8 @@ export default function Dashboard() {
                       setPropExtraExpenses('0')
                       setPropHoa('0')
                       setPropPaidOff(false)
+                      setPropIsRental(true)
+                      setPropPurchasePrice('')
                       setShowPropertyForm(!showPropertyForm)
                     }}
                   >
@@ -1637,6 +1651,23 @@ export default function Dashboard() {
                               onChange={(e) => setPropAddress(e.target.value)}
                               placeholder="Full address"
                             />
+                          </FormControl>
+                        </GridItem>
+                        <GridItem>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Home Value</FormLabel>
+                            <Input
+                              bg="white"
+                              type="number"
+                              value={propPurchasePrice}
+                              onChange={(e) =>
+                                setPropPurchasePrice(e.target.value)
+                              }
+                              placeholder="0.00"
+                            />
+                            <Text fontSize="xs" color="gray.600" mt={1}>
+                              Current estimated value for ROI calculations
+                            </Text>
                           </FormControl>
                         </GridItem>
                         <GridItem>
@@ -1694,10 +1725,30 @@ export default function Dashboard() {
                             <Checkbox
                               isChecked={propPaidOff}
                               onChange={(e) => setPropPaidOff(e.target.checked)}
+                              mr={4}
                             >
                               Property is paid off
                             </Checkbox>
                           </FormControl>
+                        </GridItem>
+                        <GridItem>
+                          <FormControl
+                            display="flex"
+                            alignItems="center"
+                            mt={6}
+                          >
+                            <Checkbox
+                              isChecked={propIsRental}
+                              onChange={(e) =>
+                                setPropIsRental(e.target.checked)
+                              }
+                            >
+                              This is a rental property
+                            </Checkbox>
+                          </FormControl>
+                          <Text fontSize="xs" color="gray.600" mt={1}>
+                            Uncheck for primary residence
+                          </Text>
                         </GridItem>
                       </Grid>
                       <HStack justify="end" mt={4}>
@@ -1802,6 +1853,11 @@ export default function Dashboard() {
                                     {prop.is_paid_off && (
                                       <Badge colorScheme="green" fontSize="xs">
                                         ✓ Paid Off
+                                      </Badge>
+                                    )}
+                                    {!prop.is_rental && (
+                                      <Badge colorScheme="blue" fontSize="xs">
+                                        Primary Residence
                                       </Badge>
                                     )}
                                   </HStack>

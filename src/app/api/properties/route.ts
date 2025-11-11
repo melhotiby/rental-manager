@@ -27,13 +27,16 @@ export async function POST(request: Request) {
       extra_monthly_expenses,
       hoa_fee,
       is_paid_off,
+      is_rental,
+      purchase_price,
       notes
     } = body
 
     const result = await pool.query(
       `INSERT INTO properties 
-       (name, address, monthly_rent, property_management_percent, extra_monthly_expenses, hoa_fee, is_paid_off, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (name, address, monthly_rent, property_management_percent, extra_monthly_expenses, 
+        hoa_fee, is_paid_off, is_rental, purchase_price, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         name,
@@ -43,6 +46,8 @@ export async function POST(request: Request) {
         extra_monthly_expenses || 0,
         hoa_fee || 0,
         is_paid_off || false,
+        is_rental !== undefined ? is_rental : true,
+        purchase_price || 0,
         notes || ''
       ]
     )
@@ -92,6 +97,8 @@ export async function PATCH(request: Request) {
       extra_monthly_expenses,
       hoa_fee,
       is_paid_off,
+      is_rental,
+      purchase_price,
       notes
     } = body
 
@@ -111,9 +118,11 @@ export async function PATCH(request: Request) {
            extra_monthly_expenses = $5,
            hoa_fee = $6,
            is_paid_off = $7,
-           notes = $8,
+           is_rental = $8,
+           purchase_price = $9,
+           notes = $10,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $9
+       WHERE id = $11
        RETURNING *`,
       [
         name,
@@ -123,6 +132,8 @@ export async function PATCH(request: Request) {
         extra_monthly_expenses || 0,
         hoa_fee,
         is_paid_off,
+        is_rental !== undefined ? is_rental : true,
+        purchase_price || 0,
         notes || '',
         id
       ]
