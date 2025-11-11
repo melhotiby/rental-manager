@@ -45,13 +45,14 @@ export async function POST(request: Request) {
       payment_link,
       notes,
       is_one_time,
-      one_time_year
+      one_time_year,
+      escrow_amount
     } = body
 
     const result = await pool.query(
       `INSERT INTO recurring_bills 
-       (property_id, name, amount, frequency, due_month, category, payment_link, notes, is_one_time, one_time_year)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       (property_id, name, amount, frequency, due_month, category, payment_link, notes, is_one_time, one_time_year, escrow_amount)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         property_id,
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
         payment_link || '',
         notes || '',
         is_one_time || false,
-        one_time_year
+        one_time_year,
+        escrow_amount || 0
       ]
     )
 
@@ -113,7 +115,8 @@ export async function PATCH(request: Request) {
       category,
       payment_link,
       notes,
-      is_active
+      is_active,
+      escrow_amount
     } = body
 
     const result = await pool.query(
@@ -127,8 +130,9 @@ export async function PATCH(request: Request) {
            payment_link = $7,
            notes = $8,
            is_active = $9,
+           escrow_amount = $10,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $10
+       WHERE id = $11
        RETURNING *`,
       [
         property_id,
@@ -140,6 +144,7 @@ export async function PATCH(request: Request) {
         payment_link,
         notes,
         is_active,
+        escrow_amount,
         id
       ]
     )

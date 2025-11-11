@@ -64,6 +64,7 @@ interface RecurringBill {
   category: string
   is_one_time: boolean
   one_time_year: number | null
+  escrow_amount: number
 }
 
 interface MonthlyData {
@@ -693,9 +694,25 @@ export default function YearlyView() {
 
                               annualBills += billAmount
 
-                              // Track mortgage separately
+                              // Track mortgage separately (only the P&I portion, not escrow)
                               if (bill.category === 'mortgage') {
-                                annualMortgage += billAmount
+                                const escrowAmount = Number(
+                                  bill.escrow_amount || 0
+                                )
+                                let annualEscrow = 0
+
+                                if (bill.frequency === 'monthly') {
+                                  annualEscrow = escrowAmount * 12
+                                } else if (bill.frequency === 'annual') {
+                                  annualEscrow = escrowAmount
+                                } else if (bill.frequency === 'quarterly') {
+                                  annualEscrow = escrowAmount * 4
+                                } else if (bill.frequency === 'semi-annual') {
+                                  annualEscrow = escrowAmount * 2
+                                }
+
+                                // Only the P&I portion goes away after payoff
+                                annualMortgage += billAmount - annualEscrow
                               }
                             })
 
@@ -771,8 +788,7 @@ export default function YearlyView() {
                                     <Text>{formatCurrency(annualBills)}</Text>
                                     {annualMortgage > 0 && (
                                       <Text fontSize="xs" color="gray.500">
-                                        (Mortgage:{' '}
-                                        {formatCurrency(annualMortgage)})
+                                        (P&I: {formatCurrency(annualMortgage)})
                                       </Text>
                                     )}
                                   </VStack>

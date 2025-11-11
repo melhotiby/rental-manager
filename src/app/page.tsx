@@ -86,6 +86,7 @@ interface RecurringBill {
   notes: string
   is_one_time: boolean
   one_time_year: number | null
+  escrow_amount: number
 }
 
 interface PaymentTracking {
@@ -153,6 +154,7 @@ export default function Dashboard() {
   const [billCategory, setBillCategory] = useState('other')
   const [billPaymentLink, setBillPaymentLink] = useState('')
   const [billNotes, setBillNotes] = useState('')
+  const [billEscrowAmount, setBillEscrowAmount] = useState('')
 
   // One-time repair form
   const [repairDescription, setRepairDescription] = useState('')
@@ -335,6 +337,7 @@ export default function Dashboard() {
         category: billCategory,
         payment_link: billPaymentLink,
         notes: billNotes,
+        escrow_amount: billEscrowAmount ? parseFloat(billEscrowAmount) : 0,
         is_active: true
       }
 
@@ -364,6 +367,7 @@ export default function Dashboard() {
         setBillCategory('other')
         setBillPaymentLink('')
         setBillNotes('')
+        setBillEscrowAmount('')
         setEditingBill(null)
         setShowBillForm(false)
         // Refresh bills
@@ -424,6 +428,7 @@ export default function Dashboard() {
       setBillCategory(bill.category)
       setBillPaymentLink(bill.payment_link)
       setBillNotes(bill.notes)
+      setBillEscrowAmount((bill.escrow_amount || 0).toString())
       setShowBillForm(true)
     }
   }
@@ -438,6 +443,7 @@ export default function Dashboard() {
     setBillCategory('other')
     setBillPaymentLink('')
     setBillNotes('')
+    setBillEscrowAmount('')
     setShowBillForm(false)
   }
 
@@ -695,14 +701,18 @@ export default function Dashboard() {
   const calculateBillTotals = () => {
     const billsThisMonth = getBillsForMonth()
 
+    // Add escrow amount to bill amount for total calculation
     const totalBills = billsThisMonth.reduce(
-      (sum, b) => sum + Number(b.amount),
+      (sum, b) => sum + Number(b.amount) + Number(b.escrow_amount || 0),
       0
     )
 
     const paidBills = billsThisMonth
       .filter((bill) => isPaymentTracked(bill.id, 'recurring_bill'))
-      .reduce((sum, b) => sum + Number(b.amount), 0)
+      .reduce(
+        (sum, b) => sum + Number(b.amount) + Number(b.escrow_amount || 0),
+        0
+      )
 
     const unpaidBills = totalBills - paidBills
 
@@ -764,8 +774,9 @@ export default function Dashboard() {
       0
     )
     // HOA is now tracked as a bill, not here
+    // Add escrow amount to bill amount for total calculation
     const totalBills = billsThisMonth.reduce(
-      (sum, b) => sum + Number(b.amount),
+      (sum, b) => sum + Number(b.amount) + Number(b.escrow_amount || 0),
       0
     )
 
@@ -1254,6 +1265,27 @@ export default function Dashboard() {
                             </Select>
                           </FormControl>
                         </GridItem>
+                        {billCategory === 'mortgage' && (
+                          <GridItem>
+                            <FormControl>
+                              <FormLabel fontSize="sm">
+                                Escrowed Amount
+                              </FormLabel>
+                              <Input
+                                bg="white"
+                                type="number"
+                                value={billEscrowAmount}
+                                onChange={(e) =>
+                                  setBillEscrowAmount(e.target.value)
+                                }
+                                placeholder="0.00"
+                              />
+                              <Text fontSize="xs" color="gray.600" mt={1}>
+                                Taxes + Insurance (still owed after payoff)
+                              </Text>
+                            </FormControl>
+                          </GridItem>
+                        )}
                         <GridItem colSpan={2}>
                           <FormControl>
                             <FormLabel fontSize="sm">Payment Link</FormLabel>
@@ -1437,7 +1469,10 @@ export default function Dashboard() {
                               </Badge>
                             </Td>
                             <Td isNumeric fontWeight="bold" color="red.600">
-                              {formatCurrency(bill.amount)}
+                              {formatCurrency(
+                                Number(bill.amount) +
+                                  Number(bill.escrow_amount || 0)
+                              )}
                             </Td>
                             <Td>
                               {bill.payment_link && (

@@ -89,3 +89,9 @@ CREATE INDEX idx_properties_is_rental ON properties(is_rental);
 --   ('123 Main St', '123 Main St, Miami, FL', 2500.00, 10.00, 0.00, false, true, 250000.00),
 --   ('456 Oak Ave', '456 Oak Ave, Tampa, FL', 2000.00, 10.00, 150.00, false, true, 200000.00),
 --   ('My Home', '789 Pine Rd, Orlando, FL', 0.00, 0.00, 0.00, false, false, 350000.00);
+
+ALTER TABLE recurring_bills 
+ADD COLUMN IF NOT EXISTS escrow_amount DECIMAL(10, 2) DEFAULT 0.00;
+
+-- Add comment for documentation
+COMMENT ON COLUMN recurring_bills.escrow_amount IS 'Escrowed taxes and insurance amount (for mortgages) - this amount will still be owed after payoff';
