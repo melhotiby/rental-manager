@@ -796,131 +796,185 @@ export default function Dashboard() {
       <Container maxW="container.xl">
         <VStack spacing={6} align="stretch">
           {/* Header with Month Selector */}
-          <Card bg="blue.600" color="white" shadow="xl" borderRadius="xl">
-            <CardBody py={6}>
-              <Grid
-                templateColumns="auto 1fr auto 1fr"
-                gap={6}
-                alignItems="center"
-              >
+          <Card
+            bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            color="white"
+            shadow="xl"
+            borderRadius="2xl"
+            overflow="hidden"
+            position="relative"
+          >
+            {/* Decorative background pattern */}
+            <Box
+              position="absolute"
+              top="-50%"
+              right="-10%"
+              width="400px"
+              height="400px"
+              borderRadius="full"
+              bg="whiteAlpha.100"
+              filter="blur(60px)"
+            />
+            <Box
+              position="absolute"
+              bottom="-30%"
+              left="-5%"
+              width="300px"
+              height="300px"
+              borderRadius="full"
+              bg="whiteAlpha.100"
+              filter="blur(50px)"
+            />
+
+            <CardBody py={6} position="relative" zIndex={1}>
+              <HStack justify="space-between" align="center" spacing={8}>
                 {/* Left: Icon + Title */}
-                <Box>
-                  <svg
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                <HStack spacing={4} flex="1">
+                  <Box
+                    bg="whiteAlpha.200"
+                    p={3}
+                    borderRadius="xl"
+                    backdropFilter="blur(10px)"
+                    boxShadow="0 8px 32px rgba(0,0,0,0.1)"
                   >
-                    <path
-                      d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      fill="rgba(255,255,255,0.2)"
-                    />
-                    <path
-                      d="M9 22V12h6v10"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M7 8h2M15 8h2"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </Box>
-                <VStack align="start" spacing={0}>
-                  <Heading size="lg" fontWeight="bold">
-                    Rental Manager
-                  </Heading>
-                  <Text fontSize="sm" opacity={0.85}>
-                    Track payments & cash flow
-                  </Text>
-                </VStack>
+                    <svg
+                      width="36"
+                      height="36"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="rgba(255,255,255,0.3)"
+                      />
+                      <path
+                        d="M9 22V12h6v10"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <circle cx="10" cy="8" r="0.5" fill="white" />
+                      <circle cx="14" cy="8" r="0.5" fill="white" />
+                    </svg>
+                  </Box>
+                  <VStack align="start" spacing={0.5}>
+                    <Heading size="lg" fontWeight="700" letterSpacing="tight">
+                      Rental Manager
+                    </Heading>
+                    <Text fontSize="sm" opacity={0.9} fontWeight="500">
+                      Track payments & cash flow
+                    </Text>
+                  </VStack>
+                </HStack>
 
                 {/* Center: Month Navigator */}
-                <VStack spacing={2}>
-                  <HStack
-                    spacing={3}
-                    bg="whiteAlpha.200"
-                    px={5}
-                    py={2}
+                <HStack
+                  spacing={3}
+                  bg="whiteAlpha.200"
+                  px={6}
+                  py={3}
+                  borderRadius="xl"
+                  backdropFilter="blur(20px)"
+                  boxShadow="0 8px 32px rgba(0,0,0,0.1)"
+                  border="1px solid"
+                  borderColor="whiteAlpha.300"
+                >
+                  <IconButton
+                    aria-label="Previous month"
+                    icon={<ChevronLeft size={20} />}
+                    onClick={() => changeMonth(-1)}
+                    size="sm"
+                    colorScheme="whiteAlpha"
+                    variant="ghost"
+                    _hover={{ bg: 'whiteAlpha.300' }}
                     borderRadius="lg"
-                    backdropFilter="blur(10px)"
-                  >
-                    <IconButton
-                      aria-label="Previous month"
-                      icon={<ChevronLeft size={18} />}
-                      onClick={() => changeMonth(-1)}
-                      size="sm"
-                      colorScheme="whiteAlpha"
-                      variant="ghost"
-                      _hover={{ bg: 'whiteAlpha.300' }}
-                      borderRadius="md"
-                    />
-                    <VStack spacing={0} minW="180px" textAlign="center">
-                      <Text
-                        fontSize="xl"
-                        fontWeight="bold"
-                        letterSpacing="tight"
-                      >
-                        {MONTHS[currentMonth - 1]}
-                      </Text>
-                      <Text fontSize="md" opacity={0.9} fontWeight="medium">
-                        {currentYear}
-                      </Text>
-                    </VStack>
-                    <IconButton
-                      aria-label="Next month"
-                      icon={<ChevronRight size={18} />}
-                      onClick={() => changeMonth(1)}
-                      size="sm"
-                      colorScheme="whiteAlpha"
-                      variant="ghost"
-                      _hover={{ bg: 'whiteAlpha.300' }}
-                      borderRadius="md"
-                    />
-                  </HStack>
-                </VStack>
+                  />
+                  <VStack spacing={0} minW="160px" textAlign="center">
+                    <Text fontSize="2xl" fontWeight="700" letterSpacing="tight">
+                      {MONTHS[currentMonth - 1]}
+                    </Text>
+                    <Text fontSize="sm" opacity={0.9} fontWeight="600">
+                      {currentYear}
+                    </Text>
+                  </VStack>
+                  <IconButton
+                    aria-label="Next month"
+                    icon={<ChevronRight size={20} />}
+                    onClick={() => changeMonth(1)}
+                    size="sm"
+                    colorScheme="whiteAlpha"
+                    variant="ghost"
+                    _hover={{ bg: 'whiteAlpha.300' }}
+                    borderRadius="lg"
+                  />
+                </HStack>
 
                 {/* Right: Net Cash Flow */}
-                <Card
-                  bg={totals.netIncome >= 0 ? 'green.500' : 'red.400'}
-                  color="white"
-                  shadow="md"
-                  borderRadius="lg"
-                >
-                  <CardBody py={3} px={4}>
-                    <VStack spacing={0}>
-                      <Text
-                        fontSize="xs"
-                        fontWeight="semibold"
-                        opacity={0.9}
-                        textTransform="uppercase"
-                        letterSpacing="wide"
-                      >
-                        Net Cash Flow
-                      </Text>
-                      <Text
-                        fontSize="3xl"
-                        fontWeight="bold"
-                        letterSpacing="tight"
-                      >
-                        {formatCurrency(totals.netIncome)}
-                      </Text>
-                      <Text fontSize="xs" fontWeight="medium">
-                        {totals.netIncome >= 0 ? '↑ Positive' : '↓ Negative'}
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              </Grid>
+                <Box flex="1" display="flex" justifyContent="flex-end">
+                  <HStack
+                    bg="whiteAlpha.200"
+                    backdropFilter="blur(20px)"
+                    px={6}
+                    py={3}
+                    borderRadius="xl"
+                    border="2px solid"
+                    borderColor={
+                      totals.netIncome >= 0 ? 'green.300' : 'red.300'
+                    }
+                    boxShadow="0 8px 32px rgba(0,0,0,0.1)"
+                    spacing={4}
+                  >
+                    <HStack spacing={3}>
+                      <Box
+                        as={DollarSign}
+                        size={18}
+                        bg={totals.netIncome >= 0 ? 'green.400' : 'red.400'}
+                        borderRadius="md"
+                        p={1}
+                      />
+                      <VStack spacing={0} align="start">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="700"
+                          opacity={0.85}
+                          textTransform="uppercase"
+                          letterSpacing="wide"
+                        >
+                          Net Cash Flow
+                        </Text>
+                        <Text
+                          fontSize="2xl"
+                          fontWeight="800"
+                          letterSpacing="tight"
+                          color={
+                            totals.netIncome >= 0 ? 'green.100' : 'red.100'
+                          }
+                          lineHeight="1.2"
+                        >
+                          {formatCurrency(totals.netIncome)}
+                        </Text>
+                      </VStack>
+                    </HStack>
+                    <Badge
+                      colorScheme={totals.netIncome >= 0 ? 'green' : 'red'}
+                      fontSize="xs"
+                      fontWeight="600"
+                      px={3}
+                      py={1}
+                      borderRadius="md"
+                      alignSelf="center"
+                    >
+                      {totals.netIncome >= 0 ? '↑ Positive' : '↓ Negative'}
+                    </Badge>
+                  </HStack>
+                </Box>
+              </HStack>
             </CardBody>
           </Card>
 
@@ -1168,6 +1222,7 @@ export default function Dashboard() {
                               <option value="insurance">Insurance</option>
                               <option value="hoa">HOA</option>
                               <option value="utilities">Utilities</option>
+                              <option value="mortgage">Mortgage</option>
                               <option value="lawn_care">Lawn Care</option>
                               <option value="pool">Pool Maintenance</option>
                               <option value="maintenance">Maintenance</option>
