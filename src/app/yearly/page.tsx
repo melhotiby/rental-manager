@@ -25,7 +25,8 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  StatHelpText
+  StatHelpText,
+  Divider
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import {
@@ -36,7 +37,8 @@ import {
   TrendingDown,
   DollarSign,
   Calendar,
-  Building2
+  Building2,
+  Home
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -49,6 +51,7 @@ interface Property {
   hoa_fee: number
   is_rental: boolean
   purchase_price: number
+  is_paid_off: boolean
 }
 
 interface RecurringBill {
@@ -616,182 +619,424 @@ export default function YearlyView() {
           {/* Property Performance Analysis */}
           <Card shadow="lg">
             <CardBody>
-              <VStack spacing={4} align="stretch">
-                <HStack justify="space-between">
-                  <HStack spacing={3}>
-                    <Building2 size={24} />
-                    <Heading size="md">Property Performance & ROI</Heading>
+              <VStack spacing={6} align="stretch">
+                {/* Rental Properties Section */}
+                <VStack spacing={4} align="stretch">
+                  <HStack justify="space-between">
+                    <HStack spacing={3}>
+                      <Building2 size={24} />
+                      <Heading size="md">
+                        Rental Properties Performance & ROI
+                      </Heading>
+                    </HStack>
+                    <Badge colorScheme="purple" fontSize="sm" px={3} py={1}>
+                      {properties.filter((p) => p.is_rental === true).length}{' '}
+                      Rental Properties
+                    </Badge>
                   </HStack>
-                  <Badge colorScheme="purple" fontSize="sm" px={3} py={1}>
-                    {properties.filter((p) => p.is_rental).length} Rental
-                    Properties
-                  </Badge>
-                </HStack>
 
-                {properties.filter((p) => p.is_rental).length > 0 ? (
-                  <Table variant="simple" size="sm">
-                    <Thead>
-                      <Tr>
-                        <Th>Property</Th>
-                        <Th isNumeric>Home Value</Th>
-                        <Th isNumeric>Annual Income</Th>
-                        <Th isNumeric>Annual Expenses</Th>
-                        <Th isNumeric>Annual Bills</Th>
-                        <Th isNumeric>Net Annual</Th>
-                        <Th isNumeric>ROI %</Th>
-                        <Th>Performance</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {properties
-                        .filter((p) => p.is_rental === true)
-                        .map((prop) => {
-                          // Calculate annual income
-                          const annualIncome = Number(prop.monthly_rent) * 12
+                  {properties.filter((p) => p.is_rental === true).length > 0 ? (
+                    <Table variant="simple" size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Property</Th>
+                          <Th isNumeric>Home Value</Th>
+                          <Th isNumeric>Annual Income</Th>
+                          <Th isNumeric>Annual Expenses</Th>
+                          <Th isNumeric>Annual Bills</Th>
+                          <Th isNumeric>Net Annual</Th>
+                          <Th isNumeric>Current ROI %</Th>
+                          <Th isNumeric>ROI (No Mortgage) %</Th>
+                          <Th>Performance</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {properties
+                          .filter((p) => p.is_rental === true)
+                          .map((prop) => {
+                            // Calculate annual income
+                            const annualIncome = Number(prop.monthly_rent) * 12
 
-                          // Calculate annual management & expenses
-                          const annualManagement =
-                            ((Number(prop.monthly_rent) *
-                              Number(prop.property_management_percent)) /
-                              100 +
-                              Number(prop.extra_monthly_expenses || 0)) *
-                            12
+                            // Calculate annual management & expenses
+                            const annualManagement =
+                              ((Number(prop.monthly_rent) *
+                                Number(prop.property_management_percent)) /
+                                100 +
+                                Number(prop.extra_monthly_expenses || 0)) *
+                              12
 
-                          // Calculate annual bills for this property
-                          const propertyBills = recurringBills.filter(
-                            (bill) => bill.property_id === prop.id
-                          )
+                            // Calculate annual bills for this property
+                            const propertyBills = recurringBills.filter(
+                              (bill) => bill.property_id === prop.id
+                            )
 
-                          let annualBills = 0
-                          propertyBills.forEach((bill) => {
-                            if (
-                              bill.is_one_time &&
-                              bill.one_time_year === currentYear
-                            ) {
-                              annualBills += Number(bill.amount)
-                            } else if (bill.frequency === 'monthly') {
-                              annualBills += Number(bill.amount) * 12
-                            } else if (bill.frequency === 'annual') {
-                              annualBills += Number(bill.amount)
-                            } else if (bill.frequency === 'quarterly') {
-                              annualBills += Number(bill.amount) * 4
-                            } else if (bill.frequency === 'semi-annual') {
-                              annualBills += Number(bill.amount) * 2
+                            let annualBills = 0
+                            let annualMortgage = 0
+
+                            propertyBills.forEach((bill) => {
+                              let billAmount = 0
+
+                              if (
+                                bill.is_one_time &&
+                                bill.one_time_year === currentYear
+                              ) {
+                                billAmount = Number(bill.amount)
+                              } else if (bill.frequency === 'monthly') {
+                                billAmount = Number(bill.amount) * 12
+                              } else if (bill.frequency === 'annual') {
+                                billAmount = Number(bill.amount)
+                              } else if (bill.frequency === 'quarterly') {
+                                billAmount = Number(bill.amount) * 4
+                              } else if (bill.frequency === 'semi-annual') {
+                                billAmount = Number(bill.amount) * 2
+                              }
+
+                              annualBills += billAmount
+
+                              // Track mortgage separately
+                              if (bill.category === 'mortgage') {
+                                annualMortgage += billAmount
+                              }
+                            })
+
+                            const annualNet =
+                              annualIncome - annualManagement - annualBills
+                            const annualNetNoMortgage =
+                              annualIncome -
+                              annualManagement -
+                              (annualBills - annualMortgage)
+
+                            const roi =
+                              prop.purchase_price > 0
+                                ? (annualNet / prop.purchase_price) * 100
+                                : 0
+
+                            const roiNoMortgage =
+                              prop.purchase_price > 0
+                                ? (annualNetNoMortgage / prop.purchase_price) *
+                                  100
+                                : 0
+
+                            // Determine performance rating (based on current ROI)
+                            let performanceColor = 'gray'
+                            let performanceLabel = 'N/A'
+                            if (prop.purchase_price > 0) {
+                              if (roi >= 8) {
+                                performanceColor = 'green'
+                                performanceLabel = 'Excellent'
+                              } else if (roi >= 5) {
+                                performanceColor = 'blue'
+                                performanceLabel = 'Good'
+                              } else if (roi >= 3) {
+                                performanceColor = 'yellow'
+                                performanceLabel = 'Fair'
+                              } else if (roi >= 0) {
+                                performanceColor = 'orange'
+                                performanceLabel = 'Below Target'
+                              } else {
+                                performanceColor = 'red'
+                                performanceLabel = 'Loss'
+                              }
                             }
-                          })
 
-                          const annualNet =
-                            annualIncome - annualManagement - annualBills
-                          const roi =
-                            prop.purchase_price > 0
-                              ? (annualNet / prop.purchase_price) * 100
-                              : 0
-
-                          // Determine performance rating
-                          let performanceColor = 'gray'
-                          let performanceLabel = 'N/A'
-                          if (prop.purchase_price > 0) {
-                            if (roi >= 8) {
-                              performanceColor = 'green'
-                              performanceLabel = 'Excellent'
-                            } else if (roi >= 5) {
-                              performanceColor = 'blue'
-                              performanceLabel = 'Good'
-                            } else if (roi >= 3) {
-                              performanceColor = 'yellow'
-                              performanceLabel = 'Fair'
-                            } else if (roi >= 0) {
-                              performanceColor = 'orange'
-                              performanceLabel = 'Below Target'
-                            } else {
-                              performanceColor = 'red'
-                              performanceLabel = 'Loss'
-                            }
-                          }
-
-                          return (
-                            <Tr key={prop.id}>
-                              <Td fontWeight="semibold">{prop.name}</Td>
-                              <Td isNumeric color="gray.600">
-                                {prop.purchase_price > 0
-                                  ? formatCurrency(prop.purchase_price)
-                                  : '-'}
-                              </Td>
-                              <Td
-                                isNumeric
-                                color="green.600"
-                                fontWeight="medium"
-                              >
-                                {formatCurrency(annualIncome)}
-                              </Td>
-                              <Td isNumeric color="orange.600">
-                                {formatCurrency(annualManagement)}
-                              </Td>
-                              <Td isNumeric color="red.600">
-                                {formatCurrency(annualBills)}
-                              </Td>
-                              <Td
-                                isNumeric
-                                fontWeight="bold"
-                                color={annualNet >= 0 ? 'green.700' : 'red.700'}
-                              >
-                                {formatCurrency(annualNet)}
-                              </Td>
-                              <Td
-                                isNumeric
-                                fontWeight="bold"
-                                fontSize="md"
-                                color={
-                                  roi >= 5
-                                    ? 'green.600'
-                                    : roi >= 3
-                                    ? 'blue.600'
-                                    : roi >= 0
-                                    ? 'orange.600'
-                                    : 'red.600'
-                                }
-                              >
-                                {prop.purchase_price > 0
-                                  ? `${roi.toFixed(2)}%`
-                                  : '-'}
-                              </Td>
-                              <Td>
-                                <Badge
-                                  colorScheme={performanceColor}
-                                  fontSize="xs"
-                                  px={2}
-                                  py={1}
+                            return (
+                              <Tr key={prop.id}>
+                                <Td fontWeight="semibold">
+                                  <VStack align="start" spacing={0}>
+                                    <Text>{prop.name}</Text>
+                                    {prop.is_paid_off && (
+                                      <Badge colorScheme="green" fontSize="xs">
+                                        ✓ Paid Off
+                                      </Badge>
+                                    )}
+                                  </VStack>
+                                </Td>
+                                <Td isNumeric color="gray.600">
+                                  {prop.purchase_price > 0
+                                    ? formatCurrency(prop.purchase_price)
+                                    : '-'}
+                                </Td>
+                                <Td
+                                  isNumeric
+                                  color="green.600"
+                                  fontWeight="medium"
                                 >
-                                  {performanceLabel}
-                                </Badge>
-                              </Td>
-                            </Tr>
-                          )
-                        })}
-                    </Tbody>
-                  </Table>
-                ) : (
-                  <Box textAlign="center" py={8} color="gray.500">
-                    <Building2
-                      size={48}
-                      style={{ margin: '0 auto', opacity: 0.3 }}
-                    />
-                    <Text mt={2}>No rental properties to analyze</Text>
-                  </Box>
+                                  {formatCurrency(annualIncome)}
+                                </Td>
+                                <Td isNumeric color="orange.600">
+                                  {formatCurrency(annualManagement)}
+                                </Td>
+                                <Td isNumeric color="red.600">
+                                  <VStack spacing={0} align="end">
+                                    <Text>{formatCurrency(annualBills)}</Text>
+                                    {annualMortgage > 0 && (
+                                      <Text fontSize="xs" color="gray.500">
+                                        (Mortgage:{' '}
+                                        {formatCurrency(annualMortgage)})
+                                      </Text>
+                                    )}
+                                  </VStack>
+                                </Td>
+                                <Td
+                                  isNumeric
+                                  fontWeight="bold"
+                                  color={
+                                    annualNet >= 0 ? 'green.700' : 'red.700'
+                                  }
+                                >
+                                  {formatCurrency(annualNet)}
+                                </Td>
+                                <Td
+                                  isNumeric
+                                  fontWeight="bold"
+                                  fontSize="md"
+                                  color={
+                                    roi >= 5
+                                      ? 'green.600'
+                                      : roi >= 3
+                                      ? 'blue.600'
+                                      : roi >= 0
+                                      ? 'orange.600'
+                                      : 'red.600'
+                                  }
+                                >
+                                  {prop.purchase_price > 0
+                                    ? `${roi.toFixed(2)}%`
+                                    : '-'}
+                                </Td>
+                                <Td
+                                  isNumeric
+                                  fontWeight="bold"
+                                  fontSize="md"
+                                  color={
+                                    roiNoMortgage >= 5
+                                      ? 'green.600'
+                                      : roiNoMortgage >= 3
+                                      ? 'blue.600'
+                                      : 'gray.600'
+                                  }
+                                >
+                                  {prop.purchase_price > 0 ? (
+                                    <VStack spacing={0} align="end">
+                                      <Text>{roiNoMortgage.toFixed(2)}%</Text>
+                                      {annualMortgage > 0 && (
+                                        <Text fontSize="xs" color="green.600">
+                                          +{(roiNoMortgage - roi).toFixed(2)}%
+                                        </Text>
+                                      )}
+                                    </VStack>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </Td>
+                                <Td>
+                                  <Badge
+                                    colorScheme={performanceColor}
+                                    fontSize="xs"
+                                    px={2}
+                                    py={1}
+                                  >
+                                    {performanceLabel}
+                                  </Badge>
+                                </Td>
+                              </Tr>
+                            )
+                          })}
+                      </Tbody>
+                    </Table>
+                  ) : (
+                    <Box textAlign="center" py={8} color="gray.500">
+                      <Building2
+                        size={48}
+                        style={{ margin: '0 auto', opacity: 0.3 }}
+                      />
+                      <Text mt={2}>No rental properties to analyze</Text>
+                    </Box>
+                  )}
+                </VStack>
+
+                <Divider />
+
+                {/* Primary Residence Section */}
+                {properties.filter((p) => p.is_rental === false).length > 0 && (
+                  <VStack spacing={4} align="stretch">
+                    <HStack spacing={3}>
+                      <Home size={24} />
+                      <Heading size="md">Primary Residence</Heading>
+                    </HStack>
+
+                    <Table variant="simple" size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Property</Th>
+                          <Th isNumeric>Home Value</Th>
+                          <Th isNumeric>Annual Bills</Th>
+                          <Th>Status</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {properties
+                          .filter((p) => p.is_rental === false)
+                          .map((prop) => {
+                            // Calculate annual bills for primary residence
+                            const propertyBills = recurringBills.filter(
+                              (bill) => bill.property_id === prop.id
+                            )
+
+                            let annualBills = 0
+                            propertyBills.forEach((bill) => {
+                              if (
+                                bill.is_one_time &&
+                                bill.one_time_year === currentYear
+                              ) {
+                                annualBills += Number(bill.amount)
+                              } else if (bill.frequency === 'monthly') {
+                                annualBills += Number(bill.amount) * 12
+                              } else if (bill.frequency === 'annual') {
+                                annualBills += Number(bill.amount)
+                              } else if (bill.frequency === 'quarterly') {
+                                annualBills += Number(bill.amount) * 4
+                              } else if (bill.frequency === 'semi-annual') {
+                                annualBills += Number(bill.amount) * 2
+                              }
+                            })
+
+                            return (
+                              <Tr key={prop.id} bg="blue.50">
+                                <Td fontWeight="semibold">
+                                  <VStack align="start" spacing={0}>
+                                    <Text>{prop.name}</Text>
+                                    <Badge colorScheme="blue" fontSize="xs">
+                                      Primary Residence
+                                    </Badge>
+                                  </VStack>
+                                </Td>
+                                <Td
+                                  isNumeric
+                                  color="gray.700"
+                                  fontWeight="medium"
+                                >
+                                  {prop.purchase_price > 0
+                                    ? formatCurrency(prop.purchase_price)
+                                    : '-'}
+                                </Td>
+                                <Td isNumeric color="red.600">
+                                  {formatCurrency(annualBills)}
+                                </Td>
+                                <Td>
+                                  <Badge colorScheme="purple" fontSize="xs">
+                                    Not income-generating
+                                  </Badge>
+                                </Td>
+                              </Tr>
+                            )
+                          })}
+                      </Tbody>
+                    </Table>
+                  </VStack>
                 )}
 
+                {/* Total Assets Summary */}
+                <Card bg="purple.50" borderWidth={2} borderColor="purple.300">
+                  <CardBody p={4}>
+                    <VStack spacing={3} align="stretch">
+                      <Heading size="sm" color="purple.800">
+                        Total Property Assets
+                      </Heading>
+                      <Grid templateColumns="repeat(3, 1fr)" gap={4}>
+                        <VStack align="start" spacing={1}>
+                          <Text
+                            fontSize="xs"
+                            color="purple.700"
+                            fontWeight="semibold"
+                          >
+                            Total Properties
+                          </Text>
+                          <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            color="purple.800"
+                          >
+                            {properties.length}
+                          </Text>
+                          <Text fontSize="xs" color="purple.600">
+                            {
+                              properties.filter((p) => p.is_rental === true)
+                                .length
+                            }{' '}
+                            rental +{' '}
+                            {
+                              properties.filter((p) => p.is_rental === false)
+                                .length
+                            }{' '}
+                            primary
+                          </Text>
+                        </VStack>
+                        <VStack align="start" spacing={1}>
+                          <Text
+                            fontSize="xs"
+                            color="purple.700"
+                            fontWeight="semibold"
+                          >
+                            Total Home Value
+                          </Text>
+                          <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            color="purple.800"
+                          >
+                            {formatCurrency(
+                              properties.reduce(
+                                (sum, p) => sum + Number(p.purchase_price || 0),
+                                0
+                              )
+                            )}
+                          </Text>
+                          <Text fontSize="xs" color="purple.600">
+                            Combined property values
+                          </Text>
+                        </VStack>
+                        <VStack align="start" spacing={1}>
+                          <Text
+                            fontSize="xs"
+                            color="purple.700"
+                            fontWeight="semibold"
+                          >
+                            Paid Off Properties
+                          </Text>
+                          <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            color="green.700"
+                          >
+                            {properties.filter((p) => p.is_paid_off).length}
+                          </Text>
+                          <Text fontSize="xs" color="purple.600">
+                            {
+                              properties.filter(
+                                (p) => p.is_paid_off && p.is_rental === true
+                              ).length
+                            }{' '}
+                            rental paid off
+                          </Text>
+                        </VStack>
+                      </Grid>
+                    </VStack>
+                  </CardBody>
+                </Card>
+
                 {/* Performance Context */}
-                <Card bg="purple.50" borderWidth={1} borderColor="purple.200">
+                <Card bg="blue.50" borderWidth={1} borderColor="blue.200">
                   <CardBody p={4}>
                     <VStack align="start" spacing={2}>
-                      <Heading size="xs" color="purple.800">
-                        ROI Benchmarks
+                      <Heading size="xs" color="blue.800">
+                        ROI Benchmarks & Notes
                       </Heading>
                       <Grid templateColumns="repeat(4, 1fr)" gap={4} w="full">
                         <VStack align="start" spacing={0}>
                           <Text
                             fontSize="xs"
-                            color="purple.700"
+                            color="blue.700"
                             fontWeight="semibold"
                           >
                             Excellent
@@ -807,7 +1052,7 @@ export default function YearlyView() {
                         <VStack align="start" spacing={0}>
                           <Text
                             fontSize="xs"
-                            color="purple.700"
+                            color="blue.700"
                             fontWeight="semibold"
                           >
                             Good
@@ -823,7 +1068,7 @@ export default function YearlyView() {
                         <VStack align="start" spacing={0}>
                           <Text
                             fontSize="xs"
-                            color="purple.700"
+                            color="blue.700"
                             fontWeight="semibold"
                           >
                             Fair
@@ -839,7 +1084,7 @@ export default function YearlyView() {
                         <VStack align="start" spacing={0}>
                           <Text
                             fontSize="xs"
-                            color="purple.700"
+                            color="blue.700"
                             fontWeight="semibold"
                           >
                             Typical CD Rate
@@ -853,10 +1098,12 @@ export default function YearlyView() {
                           </Text>
                         </VStack>
                       </Grid>
-                      <Text fontSize="xs" color="purple.700" mt={2}>
-                        ROI = (Annual Net Income ÷ Home Value) × 100. Compare to
-                        current CD rates (~4-5%) to evaluate if the property is
-                        performing better than low-risk alternatives.
+                      <Text fontSize="xs" color="blue.700" mt={2}>
+                        <strong>Current ROI:</strong> Based on current net
+                        income including mortgage payments.{' '}
+                        <strong>ROI (No Mortgage):</strong> Shows potential ROI
+                        once mortgage is paid off. The difference shows the
+                        mortgage impact on returns.
                       </Text>
                     </VStack>
                   </CardBody>
