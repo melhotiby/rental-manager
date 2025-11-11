@@ -871,6 +871,18 @@ export default function Dashboard() {
                       Track payments & cash flow
                     </Text>
                   </VStack>
+                  <Button
+                    leftIcon={<Calendar size={16} />}
+                    size="sm"
+                    colorScheme="whiteAlpha"
+                    variant="solid"
+                    bg="whiteAlpha.200"
+                    _hover={{ bg: 'whiteAlpha.300' }}
+                    onClick={() => (window.location.href = '/yearly')}
+                    ml={4}
+                  >
+                    View Yearly
+                  </Button>
                 </HStack>
 
                 {/* Center: Month Navigator */}
