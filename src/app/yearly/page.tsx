@@ -257,23 +257,23 @@ export default function YearlyView() {
               filter="blur(50px)"
             />
 
-            <CardBody py={6} position="relative" zIndex={1}>
+            <CardBody py={4} position="relative" zIndex={1}>
               <HStack justify="space-between" align="center">
-                {/* Left: Back button + Title */}
-                <HStack spacing={4}>
-                  <IconButton
-                    aria-label="Back to monthly view"
-                    icon={<ArrowLeft size={20} />}
-                    onClick={() => router.push('/')}
-                    colorScheme="whiteAlpha"
-                    variant="ghost"
-                    _hover={{ bg: 'whiteAlpha.300' }}
-                  />
-                  <VStack align="start" spacing={0.5}>
-                    <Heading size="lg" fontWeight="700" letterSpacing="tight">
+                {/* Left: Title */}
+                <HStack spacing={3}>
+                  <Box
+                    bg="whiteAlpha.200"
+                    p={2.5}
+                    borderRadius="lg"
+                    backdropFilter="blur(10px)"
+                  >
+                    <Calendar size={28} />
+                  </Box>
+                  <VStack align="start" spacing={0}>
+                    <Heading size="md" fontWeight="700" letterSpacing="tight">
                       Yearly Cash Flow
                     </Heading>
-                    <Text fontSize="sm" opacity={0.9} fontWeight="500">
+                    <Text fontSize="xs" opacity={0.9} fontWeight="500">
                       Annual performance overview
                     </Text>
                   </VStack>
@@ -283,8 +283,8 @@ export default function YearlyView() {
                 <HStack
                   spacing={3}
                   bg="whiteAlpha.200"
-                  px={6}
-                  py={3}
+                  px={5}
+                  py={2.5}
                   borderRadius="xl"
                   backdropFilter="blur(20px)"
                   boxShadow="0 8px 32px rgba(0,0,0,0.1)"
@@ -293,7 +293,7 @@ export default function YearlyView() {
                 >
                   <IconButton
                     aria-label="Previous year"
-                    icon={<ChevronLeft size={20} />}
+                    icon={<ChevronLeft size={18} />}
                     onClick={() => changeYear(-1)}
                     size="sm"
                     colorScheme="whiteAlpha"
@@ -302,16 +302,16 @@ export default function YearlyView() {
                     borderRadius="lg"
                   />
                   <Text
-                    fontSize="2xl"
+                    fontSize="xl"
                     fontWeight="700"
-                    minW="100px"
+                    minW="80px"
                     textAlign="center"
                   >
                     {currentYear}
                   </Text>
                   <IconButton
                     aria-label="Next year"
-                    icon={<ChevronRight size={20} />}
+                    icon={<ChevronRight size={18} />}
                     onClick={() => changeYear(1)}
                     size="sm"
                     colorScheme="whiteAlpha"
@@ -325,18 +325,18 @@ export default function YearlyView() {
                 <HStack
                   bg="whiteAlpha.200"
                   backdropFilter="blur(20px)"
-                  px={6}
-                  py={3}
+                  px={5}
+                  py={2.5}
                   borderRadius="xl"
                   border="2px solid"
                   borderColor={yearlyTotals.net >= 0 ? 'green.300' : 'red.300'}
                   boxShadow="0 8px 32px rgba(0,0,0,0.1)"
-                  spacing={4}
+                  spacing={3}
                 >
-                  <HStack spacing={3}>
+                  <HStack spacing={2}>
                     <Box
                       as={DollarSign}
-                      size={18}
+                      size={16}
                       bg={yearlyTotals.net >= 0 ? 'green.400' : 'red.400'}
                       borderRadius="md"
                       p={1}
@@ -352,7 +352,7 @@ export default function YearlyView() {
                         Total Net
                       </Text>
                       <Text
-                        fontSize="2xl"
+                        fontSize="xl"
                         fontWeight="800"
                         letterSpacing="tight"
                         color={yearlyTotals.net >= 0 ? 'green.100' : 'red.100'}
@@ -366,14 +366,50 @@ export default function YearlyView() {
                     colorScheme={yearlyTotals.net >= 0 ? 'green' : 'red'}
                     fontSize="xs"
                     fontWeight="600"
-                    px={3}
-                    py={1}
+                    px={2.5}
+                    py={0.5}
                     borderRadius="md"
                     alignSelf="center"
                   >
                     {yearlyTotals.net >= 0 ? '↑ Positive' : '↓ Negative'}
                   </Badge>
                 </HStack>
+              </HStack>
+            </CardBody>
+          </Card>
+
+          {/* Navigation Bar */}
+          <Card shadow="sm" bg="white">
+            <CardBody py={2}>
+              <HStack spacing={1}>
+                <Button
+                  leftIcon={<ArrowLeft size={14} />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => router.push('/')}
+                  fontWeight="500"
+                >
+                  Monthly Dashboard
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="purple"
+                  bg="purple.50"
+                  _hover={{ bg: 'purple.100' }}
+                  fontWeight="600"
+                >
+                  Yearly View
+                </Button>
+                <Button
+                  leftIcon={<TrendingUp size={14} />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => router.push('/roi')}
+                  fontWeight="500"
+                >
+                  ROI Analysis
+                </Button>
               </HStack>
             </CardBody>
           </Card>

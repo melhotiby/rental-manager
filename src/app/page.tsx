@@ -56,7 +56,8 @@ import {
   ChevronRight,
   ExternalLink,
   CheckCircle2,
-  Circle
+  Circle,
+  TrendingUp
 } from 'lucide-react'
 
 interface Property {
@@ -849,20 +850,20 @@ export default function Dashboard() {
               filter="blur(50px)"
             />
 
-            <CardBody py={6} position="relative" zIndex={1}>
+            <CardBody py={4} position="relative" zIndex={1}>
               <HStack justify="space-between" align="center" spacing={8}>
                 {/* Left: Icon + Title */}
-                <HStack spacing={4} flex="1">
+                <HStack spacing={3} flex="1">
                   <Box
                     bg="whiteAlpha.200"
-                    p={3}
-                    borderRadius="xl"
+                    p={2.5}
+                    borderRadius="lg"
                     backdropFilter="blur(10px)"
                     boxShadow="0 8px 32px rgba(0,0,0,0.1)"
                   >
                     <svg
-                      width="36"
-                      height="36"
+                      width="28"
+                      height="28"
                       viewBox="0 0 24 24"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -886,34 +887,22 @@ export default function Dashboard() {
                       <circle cx="14" cy="8" r="0.5" fill="white" />
                     </svg>
                   </Box>
-                  <VStack align="start" spacing={0.5}>
-                    <Heading size="lg" fontWeight="700" letterSpacing="tight">
+                  <VStack align="start" spacing={0}>
+                    <Heading size="md" fontWeight="700" letterSpacing="tight">
                       Rental Manager
                     </Heading>
-                    <Text fontSize="sm" opacity={0.9} fontWeight="500">
+                    <Text fontSize="xs" opacity={0.9} fontWeight="500">
                       Track payments & cash flow
                     </Text>
                   </VStack>
-                  <Button
-                    leftIcon={<Calendar size={16} />}
-                    size="sm"
-                    colorScheme="whiteAlpha"
-                    variant="solid"
-                    bg="whiteAlpha.200"
-                    _hover={{ bg: 'whiteAlpha.300' }}
-                    onClick={() => (window.location.href = '/yearly')}
-                    ml={4}
-                  >
-                    View Yearly
-                  </Button>
                 </HStack>
 
                 {/* Center: Month Navigator */}
                 <HStack
                   spacing={3}
                   bg="whiteAlpha.200"
-                  px={6}
-                  py={3}
+                  px={5}
+                  py={2.5}
                   borderRadius="xl"
                   backdropFilter="blur(20px)"
                   boxShadow="0 8px 32px rgba(0,0,0,0.1)"
@@ -922,7 +911,7 @@ export default function Dashboard() {
                 >
                   <IconButton
                     aria-label="Previous month"
-                    icon={<ChevronLeft size={20} />}
+                    icon={<ChevronLeft size={18} />}
                     onClick={() => changeMonth(-1)}
                     size="sm"
                     colorScheme="whiteAlpha"
@@ -930,17 +919,17 @@ export default function Dashboard() {
                     _hover={{ bg: 'whiteAlpha.300' }}
                     borderRadius="lg"
                   />
-                  <VStack spacing={0} minW="160px" textAlign="center">
-                    <Text fontSize="2xl" fontWeight="700" letterSpacing="tight">
+                  <VStack spacing={0} minW="140px" textAlign="center">
+                    <Text fontSize="xl" fontWeight="700" letterSpacing="tight">
                       {MONTHS[currentMonth - 1]}
                     </Text>
-                    <Text fontSize="sm" opacity={0.9} fontWeight="600">
+                    <Text fontSize="xs" opacity={0.9} fontWeight="600">
                       {currentYear}
                     </Text>
                   </VStack>
                   <IconButton
                     aria-label="Next month"
-                    icon={<ChevronRight size={20} />}
+                    icon={<ChevronRight size={18} />}
                     onClick={() => changeMonth(1)}
                     size="sm"
                     colorScheme="whiteAlpha"
@@ -955,20 +944,20 @@ export default function Dashboard() {
                   <HStack
                     bg="whiteAlpha.200"
                     backdropFilter="blur(20px)"
-                    px={6}
-                    py={3}
+                    px={5}
+                    py={2.5}
                     borderRadius="xl"
                     border="2px solid"
                     borderColor={
                       totals.netIncome >= 0 ? 'green.300' : 'red.300'
                     }
                     boxShadow="0 8px 32px rgba(0,0,0,0.1)"
-                    spacing={4}
+                    spacing={3}
                   >
-                    <HStack spacing={3}>
+                    <HStack spacing={2}>
                       <Box
                         as={DollarSign}
-                        size={18}
+                        size={16}
                         bg={totals.netIncome >= 0 ? 'green.400' : 'red.400'}
                         borderRadius="md"
                         p={1}
@@ -984,7 +973,7 @@ export default function Dashboard() {
                           Net Cash Flow
                         </Text>
                         <Text
-                          fontSize="2xl"
+                          fontSize="xl"
                           fontWeight="800"
                           letterSpacing="tight"
                           color={
@@ -1000,8 +989,8 @@ export default function Dashboard() {
                       colorScheme={totals.netIncome >= 0 ? 'green' : 'red'}
                       fontSize="xs"
                       fontWeight="600"
-                      px={3}
-                      py={1}
+                      px={2.5}
+                      py={0.5}
                       borderRadius="md"
                       alignSelf="center"
                     >
@@ -1009,6 +998,42 @@ export default function Dashboard() {
                     </Badge>
                   </HStack>
                 </Box>
+              </HStack>
+            </CardBody>
+          </Card>
+
+          {/* Navigation Bar */}
+          <Card shadow="sm" bg="white">
+            <CardBody py={2}>
+              <HStack spacing={1}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="purple"
+                  bg="purple.50"
+                  _hover={{ bg: 'purple.100' }}
+                  fontWeight="600"
+                >
+                  Monthly Dashboard
+                </Button>
+                <Button
+                  leftIcon={<Calendar size={14} />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => (window.location.href = '/yearly')}
+                  fontWeight="500"
+                >
+                  Yearly View
+                </Button>
+                <Button
+                  leftIcon={<TrendingUp size={14} />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => (window.location.href = '/roi')}
+                  fontWeight="500"
+                >
+                  ROI Analysis
+                </Button>
               </HStack>
             </CardBody>
           </Card>
