@@ -143,10 +143,10 @@ export default function YearlyView() {
         0
       )
 
-      // Bills for this month
+      // Bills for this month (including escrow)
       const billsForMonth = getBillsForMonth(bills, month)
       const billsTotal = billsForMonth.reduce(
-        (sum, b) => sum + Number(b.amount),
+        (sum, b) => sum + Number(b.amount) + Number(b.escrow_amount || 0),
         0
       )
 
@@ -642,8 +642,7 @@ export default function YearlyView() {
                         <Tr>
                           <Th>Property</Th>
                           <Th isNumeric>Home Value</Th>
-                          <Th isNumeric>Annual Income</Th>
-                          <Th isNumeric>Annual Expenses</Th>
+                          <Th isNumeric>Annual Income / Expenses</Th>
                           <Th isNumeric>Annual Bills</Th>
                           <Th isNumeric>Net Annual</Th>
                           <Th isNumeric>Current ROI %</Th>
@@ -671,57 +670,55 @@ export default function YearlyView() {
                               (bill) => bill.property_id === prop.id
                             )
 
-                            let annualBills = 0
-                            let annualMortgage = 0
+                            let annualBillsTotal = 0
+                            let annualMortgagePrincipalInterest = 0
 
                             propertyBills.forEach((bill) => {
                               let billAmount = 0
+                              let escrowAmount = 0
 
                               if (
                                 bill.is_one_time &&
                                 bill.one_time_year === currentYear
                               ) {
                                 billAmount = Number(bill.amount)
+                                escrowAmount = Number(bill.escrow_amount || 0)
                               } else if (bill.frequency === 'monthly') {
                                 billAmount = Number(bill.amount) * 12
+                                escrowAmount =
+                                  Number(bill.escrow_amount || 0) * 12
                               } else if (bill.frequency === 'annual') {
                                 billAmount = Number(bill.amount)
+                                escrowAmount = Number(bill.escrow_amount || 0)
                               } else if (bill.frequency === 'quarterly') {
                                 billAmount = Number(bill.amount) * 4
+                                escrowAmount =
+                                  Number(bill.escrow_amount || 0) * 4
                               } else if (bill.frequency === 'semi-annual') {
                                 billAmount = Number(bill.amount) * 2
+                                escrowAmount =
+                                  Number(bill.escrow_amount || 0) * 2
                               }
 
-                              annualBills += billAmount
+                              // Add escrow to bill amount for total
+                              const totalBillAmount = billAmount + escrowAmount
+                              annualBillsTotal += totalBillAmount
 
-                              // Track mortgage separately (only the P&I portion, not escrow)
+                              // Track mortgage P&I separately (this is what goes away after payoff)
                               if (bill.category === 'mortgage') {
-                                const escrowAmount = Number(
-                                  bill.escrow_amount || 0
-                                )
-                                let annualEscrow = 0
-
-                                if (bill.frequency === 'monthly') {
-                                  annualEscrow = escrowAmount * 12
-                                } else if (bill.frequency === 'annual') {
-                                  annualEscrow = escrowAmount
-                                } else if (bill.frequency === 'quarterly') {
-                                  annualEscrow = escrowAmount * 4
-                                } else if (bill.frequency === 'semi-annual') {
-                                  annualEscrow = escrowAmount * 2
-                                }
-
-                                // Only the P&I portion goes away after payoff
-                                annualMortgage += billAmount - annualEscrow
+                                // Only the principal & interest portion goes away after payoff
+                                // Escrow (taxes + insurance) still needs to be paid
+                                annualMortgagePrincipalInterest += billAmount
                               }
                             })
 
                             const annualNet =
-                              annualIncome - annualManagement - annualBills
+                              annualIncome - annualManagement - annualBillsTotal
                             const annualNetNoMortgage =
                               annualIncome -
                               annualManagement -
-                              (annualBills - annualMortgage)
+                              (annualBillsTotal -
+                                annualMortgagePrincipalInterest)
 
                             const roi =
                               prop.purchase_price > 0
@@ -768,27 +765,50 @@ export default function YearlyView() {
                                     )}
                                   </VStack>
                                 </Td>
-                                <Td isNumeric color="gray.600">
+                                <Td isNumeric color="gray.600" fontSize="sm">
                                   {prop.purchase_price > 0
-                                    ? formatCurrency(prop.purchase_price)
+                                    ? new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD',
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                      }).format(prop.purchase_price)
                                     : '-'}
                                 </Td>
-                                <Td
-                                  isNumeric
-                                  color="green.600"
-                                  fontWeight="medium"
-                                >
-                                  {formatCurrency(annualIncome)}
-                                </Td>
-                                <Td isNumeric color="orange.600">
-                                  {formatCurrency(annualManagement)}
+                                <Td isNumeric>
+                                  <VStack spacing={0} align="end">
+                                    <Text
+                                      color="green.600"
+                                      fontWeight="medium"
+                                      fontSize="sm"
+                                    >
+                                      {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD',
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                      }).format(annualIncome)}
+                                    </Text>
+                                    <Text color="orange.600" fontSize="xs">
+                                      -{formatCurrency(annualManagement)}
+                                    </Text>
+                                  </VStack>
                                 </Td>
                                 <Td isNumeric color="red.600">
                                   <VStack spacing={0} align="end">
-                                    <Text>{formatCurrency(annualBills)}</Text>
-                                    {annualMortgage > 0 && (
-                                      <Text fontSize="xs" color="gray.500">
-                                        (P&I: {formatCurrency(annualMortgage)})
+                                    <Text fontSize="sm">
+                                      {formatCurrency(annualBillsTotal)}
+                                    </Text>
+                                    {annualMortgagePrincipalInterest > 0 && (
+                                      <Text
+                                        fontSize="xs"
+                                        color="gray.500"
+                                        whiteSpace="nowrap"
+                                      >
+                                        P&I:{' '}
+                                        {formatCurrency(
+                                          annualMortgagePrincipalInterest
+                                        )}
                                       </Text>
                                     )}
                                   </VStack>
@@ -799,6 +819,7 @@ export default function YearlyView() {
                                   color={
                                     annualNet >= 0 ? 'green.700' : 'red.700'
                                   }
+                                  fontSize="sm"
                                 >
                                   {formatCurrency(annualNet)}
                                 </Td>
@@ -835,7 +856,7 @@ export default function YearlyView() {
                                   {prop.purchase_price > 0 ? (
                                     <VStack spacing={0} align="end">
                                       <Text>{roiNoMortgage.toFixed(2)}%</Text>
-                                      {annualMortgage > 0 && (
+                                      {annualMortgagePrincipalInterest > 0 && (
                                         <Text fontSize="xs" color="green.600">
                                           +{(roiNoMortgage - roi).toFixed(2)}%
                                         </Text>
@@ -901,19 +922,24 @@ export default function YearlyView() {
 
                             let annualBills = 0
                             propertyBills.forEach((bill) => {
+                              const billAmount = Number(bill.amount)
+                              const escrowAmount = Number(
+                                bill.escrow_amount || 0
+                              )
+
                               if (
                                 bill.is_one_time &&
                                 bill.one_time_year === currentYear
                               ) {
-                                annualBills += Number(bill.amount)
+                                annualBills += billAmount + escrowAmount
                               } else if (bill.frequency === 'monthly') {
-                                annualBills += Number(bill.amount) * 12
+                                annualBills += (billAmount + escrowAmount) * 12
                               } else if (bill.frequency === 'annual') {
-                                annualBills += Number(bill.amount)
+                                annualBills += billAmount + escrowAmount
                               } else if (bill.frequency === 'quarterly') {
-                                annualBills += Number(bill.amount) * 4
+                                annualBills += (billAmount + escrowAmount) * 4
                               } else if (bill.frequency === 'semi-annual') {
-                                annualBills += Number(bill.amount) * 2
+                                annualBills += (billAmount + escrowAmount) * 2
                               }
                             })
 
@@ -1118,8 +1144,9 @@ export default function YearlyView() {
                         <strong>Current ROI:</strong> Based on current net
                         income including mortgage payments.{' '}
                         <strong>ROI (No Mortgage):</strong> Shows potential ROI
-                        once mortgage is paid off. The difference shows the
-                        mortgage impact on returns.
+                        once mortgage P&I is paid off (taxes and insurance still
+                        apply). The difference shows the mortgage impact on
+                        returns.
                       </Text>
                     </VStack>
                   </CardBody>

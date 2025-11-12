@@ -1,20 +1,31 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const month = searchParams.get('month')
+    const year = searchParams.get('year')
+
+    if (!month || !year) {
+      return NextResponse.json(
+        { error: 'Month and year are required' },
+        { status: 400 }
+      )
+    }
+
     const result = await pool.query(
-      `SELECT rb.*, p.name as property_name 
-       FROM recurring_bills rb
-       LEFT JOIN properties p ON rb.property_id = p.id
-       WHERE rb.is_active = true
-       ORDER BY rb.created_at DESC`
+      `SELECT * FROM payment_tracking 
+       WHERE payment_month = $1 AND payment_year = $2
+       ORDER BY created_at DESC`,
+      [month, year]
     )
+
     return NextResponse.json(result.rows)
   } catch (error) {
-    console.error('Error fetching bills:', error)
+    console.error('Error fetching payment tracking:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch bills' },
+      { error: 'Failed to fetch payment tracking' },
       { status: 500 }
     )
   }
@@ -24,47 +35,77 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const {
+      bill_type,
+      bill_id,
       property_id,
-      name,
-      amount,
-      frequency,
-      due_month,
-      category,
-      payment_link,
-      notes,
-      is_one_time,
-      one_time_year,
-      escrow_amount,
-      is_active
+      payment_month,
+      payment_year,
+      is_paid,
+      paid_date,
+      amount_paid,
+      notes
     } = body
 
-    const result = await pool.query(
-      `INSERT INTO recurring_bills 
-       (property_id, name, amount, frequency, due_month, category, 
-        payment_link, notes, is_one_time, one_time_year, escrow_amount, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       RETURNING *`,
-      [
-        property_id || null,
-        name,
-        amount,
-        frequency || 'monthly',
-        due_month || null,
-        category || 'other',
-        payment_link || '',
-        notes || '',
-        is_one_time || false,
-        one_time_year || null,
-        escrow_amount || 0,
-        is_active !== undefined ? is_active : true
-      ]
+    // Check if tracking record already exists
+    const existing = await pool.query(
+      `SELECT id FROM payment_tracking 
+       WHERE bill_type = $1 AND bill_id = $2 
+       AND payment_month = $3 AND payment_year = $4`,
+      [bill_type, bill_id, payment_month, payment_year]
     )
 
-    return NextResponse.json(result.rows[0], { status: 201 })
+    let result
+
+    if (existing.rows.length > 0) {
+      // Update existing record
+      result = await pool.query(
+        `UPDATE payment_tracking 
+         SET is_paid = $1,
+             paid_date = $2,
+             amount_paid = $3,
+             notes = $4,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE bill_type = $5 AND bill_id = $6 
+         AND payment_month = $7 AND payment_year = $8
+         RETURNING *`,
+        [
+          is_paid,
+          paid_date,
+          amount_paid,
+          notes || '',
+          bill_type,
+          bill_id,
+          payment_month,
+          payment_year
+        ]
+      )
+    } else {
+      // Insert new record
+      result = await pool.query(
+        `INSERT INTO payment_tracking 
+         (bill_type, bill_id, property_id, payment_month, payment_year, 
+          is_paid, paid_date, amount_paid, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [
+          bill_type,
+          bill_id,
+          property_id || null,
+          payment_month,
+          payment_year,
+          is_paid,
+          paid_date,
+          amount_paid,
+          notes || ''
+        ]
+      )
+    }
+
+    return NextResponse.json(result.rows[0], { status: 200 })
   } catch (error) {
-    console.error('Error creating bill:', error)
+    console.error('Error saving payment tracking:', error)
     return NextResponse.json(
-      { error: 'Failed to create bill' },
+      { error: 'Failed to save payment tracking' },
       { status: 500 }
     )
   }
