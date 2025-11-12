@@ -64,7 +64,7 @@ A comprehensive Next.js application for managing rental properties, tracking mon
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone git@github.com:melhotiby/rental-manager.git
 cd rental-manager
 ```
 
