@@ -1803,153 +1803,230 @@ export default function Dashboard() {
                 )}
 
                 {properties.length > 0 ? (
-                  <Table variant="simple" size="sm">
-                    <Thead>
-                      <Tr>
-                        <Th>Property</Th>
-                        <Th isNumeric>Monthly Rent</Th>
-                        <Th isNumeric>Management</Th>
-                        <Th isNumeric>Extra Expenses</Th>
-                        <Th isNumeric>HOA</Th>
-                        <Th isNumeric>Net</Th>
-                        <Th></Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {properties.map((prop) => {
-                        const management =
-                          Number(prop.monthly_rent) *
-                          (Number(prop.property_management_percent) / 100)
-                        const extraExpenses = Number(
-                          prop.extra_monthly_expenses || 0
-                        )
-                        const net =
-                          Number(prop.monthly_rent) -
-                          management -
-                          extraExpenses -
-                          Number(prop.hoa_fee)
+                  <>
+                    <Table variant="simple" size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Property</Th>
+                          <Th isNumeric>Monthly Rent</Th>
+                          <Th isNumeric>Management</Th>
+                          <Th isNumeric>Extra Expenses</Th>
+                          <Th isNumeric>HOA</Th>
+                          <Th isNumeric>Net</Th>
+                          <Th></Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {properties.map((prop) => {
+                          const management =
+                            Number(prop.monthly_rent) *
+                            (Number(prop.property_management_percent) / 100)
+                          const extraExpenses = Number(
+                            prop.extra_monthly_expenses || 0
+                          )
+                          const net =
+                            Number(prop.monthly_rent) -
+                            management -
+                            extraExpenses -
+                            Number(prop.hoa_fee)
 
-                        // Generate a consistent color for each property based on its ID
-                        const colors = [
-                          'blue',
-                          'purple',
-                          'pink',
-                          'orange',
-                          'teal',
-                          'cyan',
-                          'green'
-                        ]
-                        const colorIndex = (prop.id || 0) % colors.length
-                        const propertyColor = colors[colorIndex]
+                          // Generate a consistent color for each property based on its ID
+                          const colors = [
+                            'blue',
+                            'purple',
+                            'pink',
+                            'orange',
+                            'teal',
+                            'cyan',
+                            'green'
+                          ]
+                          const colorIndex = (prop.id || 0) % colors.length
+                          const propertyColor = colors[colorIndex]
 
-                        return (
-                          <Tr key={prop.id}>
-                            <Td>
-                              <HStack spacing={3}>
-                                {/* Property Icon */}
-                                <Box
-                                  bg={`${propertyColor}.100`}
-                                  p={2}
-                                  borderRadius="md"
-                                  display="flex"
-                                  alignItems="center"
-                                  justifyContent="center"
-                                >
-                                  <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
+                          return (
+                            <Tr key={prop.id}>
+                              <Td>
+                                <HStack spacing={3}>
+                                  {/* Property Icon */}
+                                  <Box
+                                    bg={`${propertyColor}.100`}
+                                    p={2}
+                                    borderRadius="md"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
                                   >
-                                    <path
-                                      d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                                      stroke={`var(--chakra-colors-${propertyColor}-600)`}
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      fill={`var(--chakra-colors-${propertyColor}-200)`}
-                                    />
-                                    <path
-                                      d="M9 22V12h6v10"
-                                      stroke={`var(--chakra-colors-${propertyColor}-600)`}
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                </Box>
+                                    <svg
+                                      width="20"
+                                      height="20"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                                        stroke={`var(--chakra-colors-${propertyColor}-600)`}
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        fill={`var(--chakra-colors-${propertyColor}-200)`}
+                                      />
+                                      <path
+                                        d="M9 22V12h6v10"
+                                        stroke={`var(--chakra-colors-${propertyColor}-600)`}
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  </Box>
 
-                                <VStack align="start" spacing={0}>
-                                  <HStack>
-                                    <Text fontWeight="semibold">
-                                      {prop.name}
-                                    </Text>
-                                    {prop.is_paid_off && (
-                                      <Badge colorScheme="green" fontSize="xs">
-                                        ✓ Paid Off
-                                      </Badge>
+                                  <VStack align="start" spacing={0}>
+                                    <HStack>
+                                      <Text fontWeight="semibold">
+                                        {prop.name}
+                                      </Text>
+                                      {prop.is_paid_off && (
+                                        <Badge
+                                          colorScheme="green"
+                                          fontSize="xs"
+                                        >
+                                          ✓ Paid Off
+                                        </Badge>
+                                      )}
+                                      {!prop.is_rental && (
+                                        <Badge colorScheme="blue" fontSize="xs">
+                                          Primary Residence
+                                        </Badge>
+                                      )}
+                                    </HStack>
+                                    {prop.address && (
+                                      <Text fontSize="xs" color="gray.500">
+                                        {prop.address}
+                                      </Text>
                                     )}
-                                    {!prop.is_rental && (
-                                      <Badge colorScheme="blue" fontSize="xs">
-                                        Primary Residence
-                                      </Badge>
-                                    )}
-                                  </HStack>
-                                  {prop.address && (
-                                    <Text fontSize="xs" color="gray.500">
-                                      {prop.address}
-                                    </Text>
-                                  )}
-                                </VStack>
-                              </HStack>
-                            </Td>
-                            <Td
-                              isNumeric
-                              fontWeight="semibold"
-                              color="green.600"
-                            >
-                              {formatCurrency(Number(prop.monthly_rent))}
-                            </Td>
-                            <Td isNumeric color="orange.600">
-                              {formatCurrency(management)}
-                            </Td>
-                            <Td isNumeric color="orange.600">
-                              {extraExpenses > 0
-                                ? formatCurrency(extraExpenses)
-                                : '-'}
-                            </Td>
-                            <Td isNumeric color="orange.600">
-                              {formatCurrency(Number(prop.hoa_fee))}
-                            </Td>
-                            <Td isNumeric fontWeight="bold" color="blue.600">
-                              {formatCurrency(net)}
-                            </Td>
-                            <Td>
-                              <HStack spacing={1}>
-                                <IconButton
-                                  aria-label="Edit property"
-                                  icon={<Edit size={16} />}
-                                  size="sm"
-                                  colorScheme="blue"
-                                  variant="ghost"
-                                  onClick={() => startEditProperty(prop)}
-                                />
-                                <IconButton
-                                  aria-label="Delete"
-                                  icon={<Trash2 size={16} />}
-                                  size="sm"
-                                  colorScheme="red"
-                                  variant="ghost"
-                                  onClick={() => deleteProperty(prop.id)}
-                                />
-                              </HStack>
-                            </Td>
-                          </Tr>
-                        )
-                      })}
-                    </Tbody>
-                  </Table>
+                                  </VStack>
+                                </HStack>
+                              </Td>
+                              <Td
+                                isNumeric
+                                fontWeight="semibold"
+                                color="green.600"
+                              >
+                                {formatCurrency(Number(prop.monthly_rent))}
+                              </Td>
+                              <Td isNumeric color="orange.600">
+                                {formatCurrency(management)}
+                              </Td>
+                              <Td isNumeric color="orange.600">
+                                {extraExpenses > 0
+                                  ? formatCurrency(extraExpenses)
+                                  : '-'}
+                              </Td>
+                              <Td isNumeric color="orange.600">
+                                {formatCurrency(Number(prop.hoa_fee))}
+                              </Td>
+                              <Td isNumeric fontWeight="bold" color="blue.600">
+                                {formatCurrency(net)}
+                              </Td>
+                              <Td>
+                                <HStack spacing={1}>
+                                  <IconButton
+                                    aria-label="Edit property"
+                                    icon={<Edit size={16} />}
+                                    size="sm"
+                                    colorScheme="blue"
+                                    variant="ghost"
+                                    onClick={() => startEditProperty(prop)}
+                                  />
+                                  <IconButton
+                                    aria-label="Delete"
+                                    icon={<Trash2 size={16} />}
+                                    size="sm"
+                                    colorScheme="red"
+                                    variant="ghost"
+                                    onClick={() => deleteProperty(prop.id)}
+                                  />
+                                </HStack>
+                              </Td>
+                            </Tr>
+                          )
+                        })}
+                        {/* Totals Row */}
+                        <Tr bg="gray.100" fontWeight="bold">
+                          <Td fontWeight="bold">
+                            <HStack>
+                              <Building2 size={16} />
+                              <Text>
+                                TOTAL ({properties.length}{' '}
+                                {properties.length === 1
+                                  ? 'property'
+                                  : 'properties'}
+                                )
+                              </Text>
+                            </HStack>
+                          </Td>
+                          <Td isNumeric color="green.700" fontSize="md">
+                            {formatCurrency(
+                              properties.reduce(
+                                (sum, p) => sum + Number(p.monthly_rent),
+                                0
+                              )
+                            )}
+                          </Td>
+                          <Td isNumeric color="orange.700" fontSize="md">
+                            {formatCurrency(
+                              properties.reduce(
+                                (sum, p) =>
+                                  sum +
+                                  (Number(p.monthly_rent) *
+                                    Number(p.property_management_percent)) /
+                                    100,
+                                0
+                              )
+                            )}
+                          </Td>
+                          <Td isNumeric color="orange.700" fontSize="md">
+                            {formatCurrency(
+                              properties.reduce(
+                                (sum, p) =>
+                                  sum + Number(p.extra_monthly_expenses || 0),
+                                0
+                              )
+                            )}
+                          </Td>
+                          <Td isNumeric color="orange.700" fontSize="md">
+                            {formatCurrency(
+                              properties.reduce(
+                                (sum, p) => sum + Number(p.hoa_fee),
+                                0
+                              )
+                            )}
+                          </Td>
+                          <Td isNumeric fontSize="lg" color="blue.700">
+                            {formatCurrency(
+                              properties.reduce((sum, p) => {
+                                const management =
+                                  Number(p.monthly_rent) *
+                                  (Number(p.property_management_percent) / 100)
+                                const extraExpenses = Number(
+                                  p.extra_monthly_expenses || 0
+                                )
+                                return (
+                                  sum +
+                                  (Number(p.monthly_rent) -
+                                    management -
+                                    extraExpenses -
+                                    Number(p.hoa_fee))
+                                )
+                              }, 0)
+                            )}
+                          </Td>
+                          <Td></Td>
+                        </Tr>
+                      </Tbody>
+                    </Table>
+                  </>
                 ) : (
                   <Box textAlign="center" py={8} color="gray.500">
                     <Building2
